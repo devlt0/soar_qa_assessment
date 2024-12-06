@@ -13,7 +13,9 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 #from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.remote.webelement import WebElement
-from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.options import Options as ChromeOptions
+from selenium.webdriver.firefox.options import Options as FirefoxOptions
+from selenium.webdriver.edge.options import Options as EdgeOptions
 
 
 class Browser(Enum):
@@ -30,13 +32,13 @@ min_wait_time = 1
 def load_url( target_url:str = owasp_juice_url, target_browser:Browser = Browser.CHROME, wait_time_on_load:int=def_wait_time ) -> webdriver:
     driver_opts = None
     if target_browser == Browser.CHROME:
-        driver_opts = webdriver.ChromeOptions()
+        driver_opts = ChromeOptions()
     elif target_browser == Browser.FIREFOX:
-        driver_opts = webdriver.FirefoxOptions()
+        driver_opts = FirefoxOptions()
     elif target_browser == Browser.EDGE:
-        driver_opts = webdriver.EdgeOptions()
+        driver_opts = EdgeOptions()
     else:
-        raise ValueError(f"Unsupported Browser provided; {target_browser}.  Valid values for target_browser in load_url are provided (valid value, formal name); { [(cur_mem.value, cur_mem.name) for cur_mem in Browser] }")
+        raise ValueError(f"Unsupported Browser provided; {target_browser}.  Valid values for target_browser in load_url are; { ['Browser.'+cur_mem.name for cur_mem in Browser] }")
 
     driver_opts.add_argument("--disable-gpu");
     driver_opts.add_argument("--disable-cache");
@@ -190,7 +192,7 @@ def expand_product_review():
 
 
 if __name__ == '__main__':
-    wd = load_url()
+    wd = load_url(target_browser=Browser.EDGE)
 
     try:
         dismiss_owasp_juice_popups(wd)
