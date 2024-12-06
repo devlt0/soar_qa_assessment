@@ -143,7 +143,9 @@ def change_items_per_page(given_webdriver:webdriver=None, new_items_per_page:int
         # do nothing, already have the number of items to display selected
         changed_to_new_ipp = True
         return changed_to_new_ipp
+
     given_webdriver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth'});", items_per_page_menu)
+
     try:
         items_per_page_menu.click()
     except InvalidSelectorException as elem_not_in_view_err:
@@ -157,7 +159,11 @@ def change_items_per_page(given_webdriver:webdriver=None, new_items_per_page:int
     target_value_opt.click()
     sleep(min_wait_time)
 
-    items_per_page_menu = given_webdriver.find_element(By.XPATH, '//div[contains(@class, "mat-select-value")]')
+    try:
+        items_per_page_menu = given_webdriver.find_element(By.XPATH, '//div[contains(@class, "mat-select-value")]')
+    except NoSuchElementException as does_not_exist_err:
+        print(f"Could not find menu to change items per page. \nSee {does_not_exist_err}")
+
     if items_per_page_menu.text == str(new_items_per_page):
         changed_to_new_ipp = True
 
@@ -165,16 +171,30 @@ def change_items_per_page(given_webdriver:webdriver=None, new_items_per_page:int
 
 
 
-def get_num_items_on_page_bottom_bar():
+def get_num_items_on_page_bottom_bar(given_webdriver:webdriver=None)->int:
     '''
     Read the number 'of X' from 1 to Y of X
+    from element <div class="mat-paginator-range-label"> 1 – 37 of 37 </div>
     '''
-    pass
+    paginator_elem = given_webdriver.find_element(By.XPATH, '//div[@class="mat-paginator-range-label"]')
+    raw_paginator_text = paginator_elem.text
+    num_items_by_display_cnt = 0
+    last_elem_index = -1
 
-def count_num_items_on_cur_page():
+    if "of" in raw_paginator_text:
+        num_items_by_display_cnt = int(raw_paginator_text.split("of")[last_elem_index].strip())
+    else:
+        raise ValueError("Could not extract the total number of item from the informational bottom bar")
+
+    return num_items_by_display_cnt
+
+
+def count_num_items_on_cur_page(given_webdriver:webdriver=None)->int:
     '''
     '''
-    pass
+    store_items_elems = given_webdriver.find_elements(By.XPATH, '//div[@class="mat-grid-tile-content"]')
+    num_items_elems = len(store_items_elems)
+    return num_items_elems
 
 
 
@@ -192,11 +212,13 @@ def expand_product_review():
 
 
 if __name__ == '__main__':
-    wd = load_url(target_browser=Browser.EDGE)
+    wd = load_url(target_browser=Browser.CHROME)
 
     try:
         dismiss_owasp_juice_popups(wd)
         print(change_items_per_page(wd))
+        print(get_num_items_on_page_bottom_bar(wd))
+        print(count_num_items_on_cur_page(wd))
     except Exception as e:
         print(e)
 
