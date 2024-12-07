@@ -9,6 +9,7 @@ from selenium.common.exceptions import \
     TimeoutException, NoSuchElementException, ElementNotInteractableException, \
     ElementClickInterceptedException, StaleElementReferenceException, InvalidSelectorException
 from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.common.alert import Alert
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
@@ -27,12 +28,14 @@ class Browser(Enum):
 
 owasp_juice_shop_url = "https://juice-shop.herokuapp.com/#/"
 owasp_juice_registration_url = "https://juice-shop.herokuapp.com/#/register"
+owasp_juice_login_url = 'https://juice-shop.herokuapp.com/#/login'
 
 long_wait_time = 10
 def_wait_time = 3
 min_wait_time = 1
 
 test_cred_email = "test_account@gmail.com"
+test_random_email = f"test_account{randint(0,999)}{randint(100,999)}{randint(100,999)}@gmail.com" # to avoid issues with registering same account twice
 test_cred_pw    = "notArealpassword123!"
 
 
@@ -97,23 +100,31 @@ def click_email_field(given_webdriver:webdriver=None):
     # <input _ngcontent-tiu-c32="" id="emailControl" type="text" matinput="" aria-label="Email address field" class="mat-input-element mat-form-field-autofill-control ng-tns-c21-13 ng-pristine ng-invalid cdk-text-field-autofill-monitored ng-touched" required="" aria-required="true" aria-describedby="mat-error-2">
     email_field = given_webdriver.find_element(By.XPATH, '//input[@id="emailControl"]')
     email_field.click()
+    return email_field
 
 def click_password_field(given_webdriver:webdriver=None):
     pw_field = given_webdriver.find_element(By.XPATH, '//input[@id="passwordControl"]')
     pw_field.click()
+    return pw_field
 
 def click_repeat_password_field(given_webdriver:webdriver=None):
     rpw_field = given_webdriver.find_element(By.XPATH, '//input[@id="repeatPasswordControl"]')
     rpw_field.click()
+    return rpw_field
 
 def click_security_question_field(given_webdriver:webdriver=None):
     sec_quest_field = given_webdriver.find_element(By.XPATH, '//mat-select[@name="securityQuestion"]')
     sec_quest_field.click()
+    return sec_quest_field
 
 def click_security_answer_field(given_webdriver:webdriver=None):
     security_ans_field = given_webdriver.find_element(By.XPATH, '//input[@id="securityAnswerControl"]')
     security_ans_field.click()
+    return security_ans_field
 
+def click_password_advice(given_webdriver:webdriver=None):
+    pw_adv_elem = given_webdriver.find_element(By.TAG_NAME, 'mat-slide-toggle')
+    pw_adv_elem.click()
 
 
 def get_field_errors(given_webdriver:webdriver=None)->[str]:
@@ -127,19 +138,68 @@ def get_field_errors(given_webdriver:webdriver=None)->[str]:
 
 
 
+def click_register_button(given_webdriver:webdriver=None):
+    register_btn = given_webdriver.find_element(By.XPATH, '//button[@id="registerButton"]')
+    register_btn.click()
 
 
 
 
-def get_password_field_error(given_webdriver:webdriver=None)->str:
-    pw_error = get_field_error_by_xpath(wd, '//input[@id="passwordControl"]')
-    return pw_error
+def register_test_user(given_webdriver:webdriver=None, use_random_email:bool=True):
+    email_elem = click_email_field(given_webdriver)
+    email_to_use = test_random_email if use_random_email else test_cred_email
+    email_elem.send_keys(email_to_use)
 
-def register_user():
-    pass
+    pw_elem = click_password_field(given_webdriver)
+    pw_elem.send_keys(test_cred_pw)
 
-def login_with_user():
-    pass
+    rpw_elem = click_repeat_password_field(given_webdriver)
+    rpw_elem.send_keys(test_cred_pw)
+
+    sa_elem = click_security_answer_field(given_webdriver)
+    sa_elem.send_keys(test_cred_pw)
+
+    sq_elem = click_security_question_field(given_webdriver)
+    actions = ActionChains(wd)
+    actions.move_to_element(sq_elem).perform()
+    actions.click().perform()
+
+    click_register_button(given_webdriver)
+    sleep(min_wait_time)
+
+
+def get_registration_message(given_webdriver:webdriver=None)->str:
+    #class="mat-simple-snack-bar-content"
+    registration_msg = given_webdriver.find_element(By.XPATH, '//*[@class="mat-simple-snack-bar-content"]').text
+    return registration_msg
+
+
+def click_login_email(given_webdriver:webdriver=None):
+    login_email_field = given_webdriver.find_element(By.XPATH, '//input[@id="email"]')
+    login_email_field.click()
+    return login_email_field
+
+def click_login_password(given_webdriver:webdriver=None):
+    login_pw_field = given_webdriver.find_element(By.XPATH, '//input[@id="password"]')
+    login_pw_field.click()
+    return login_pw_field
+
+def click_login_button(given_webdriver:webdriver=None):
+    login_btn = given_webdriver.find_element(By.XPATH, '//button[@id="loginButton"]')
+    login_btn.click()
+
+
+
+
+def login_with_test_user(given_webdriver:webdriver=None):
+    email_field = click_login_email(given_webdriver)
+    email_field.send_keys(test_cred_email)
+
+    password_field = click_login_password(given_webdriver)
+    password_field.send_keys(test_cred_pw)
+
+    click_login_button(given_webdriver)
+
 
 
 
@@ -307,12 +367,12 @@ if __name__ == '__main__':
         navigate_to_user_registration(wd)
         '''
 
-        wd.get(owasp_juice_registration_url)
+        wd.get(owasp_juice_login_url)
         sleep(def_wait_time)
 
         dismiss_owasp_juice_popups(wd)
 
-
+        '''
         click_email_field(wd)
         click_user_reg_title(wd)
         email_err = get_field_errors(wd)
@@ -357,6 +417,14 @@ if __name__ == '__main__':
         wd.refresh()
         sleep(min_wait_time)
 
+        click_password_advice(wd)
+        sleep(min_wait_time)
+        register_test_user(wd)
+        #success_msg = "Registration completed successfully. You can now log in."
+        registration_msg = get_registration_message(given_webdriver)
+        # assert registration msg includes sucessful
+        '''
+        login_with_test_user(wd)
 
 
 
