@@ -8,7 +8,7 @@ from selenium import webdriver
 from selenium.common.exceptions import \
     TimeoutException, NoSuchElementException, ElementNotInteractableException, \
     ElementClickInterceptedException, StaleElementReferenceException, InvalidSelectorException
-#from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
@@ -25,13 +25,18 @@ class Browser(Enum):
     EDGE    = 3
     #OPERA   = 4
 
-owasp_juice_url = "https://juice-shop.herokuapp.com/#/"
+owasp_juice_shop_url = "https://juice-shop.herokuapp.com/#/"
+owasp_juice_registration_url = "https://juice-shop.herokuapp.com/#/register"
 
 long_wait_time = 10
 def_wait_time = 3
 min_wait_time = 1
 
-def load_url( target_url:str = owasp_juice_url, target_browser:Browser = Browser.CHROME, wait_time_on_load:int=def_wait_time ) -> webdriver:
+test_cred_email = "test_account@gmail.com"
+test_cred_pw    = "notArealpassword123!"
+
+
+def get_webdriver(target_browser:Browser = Browser.CHROME) -> webdriver:
     driver_opts = None
     if target_browser == Browser.CHROME:
         driver_opts = ChromeOptions()
@@ -41,7 +46,7 @@ def load_url( target_url:str = owasp_juice_url, target_browser:Browser = Browser
         driver_opts = EdgeOptions()
     else:
         raise ValueError(f"Unsupported Browser provided; {target_browser}.  Valid values for target_browser in load_url are; { ['Browser.'+cur_mem.name for cur_mem in Browser] }")
-
+    driver_opts.add_argument("--window-size=1920,1080");
     driver_opts.add_argument("--disable-gpu");
     driver_opts.add_argument("--disable-cache");
     driver_opts.add_argument("--disable-extensions");
@@ -58,15 +63,77 @@ def load_url( target_url:str = owasp_juice_url, target_browser:Browser = Browser
 
     driver.delete_all_cookies()
 
-    driver.get(target_url)
-    sleep(wait_time_on_load)
-
     return driver
 
 
 
-def navigate_to_user_registration():
-    pass
+def navigate_to_user_registration(given_webdriver:webdriver=None):
+    #<button _ngcontent-tiu-c124="" mat-button="" fxhide.lt-md="" fxshow="" aria-label="Show/hide account menu" id="navbarAccount" class="mat-focus-indicator mat-menu-trigger buttons mat-button mat-button-base" style="vertical-align: middle; height: 48px;" aria-haspopup="menu">
+    account_btn = given_webdriver.find_element(By.XPATH, "//button[@aria-label='Show/hide account menu']")
+    account_btn.click()
+    sleep(min_wait_time)
+
+    #<button _ngcontent-tiu-c124="" mat-menu-item="" routerlink="/login" aria-label="Go to login page" id="navbarLoginButton"
+    login_btn = given_webdriver.find_element(By.XPATH, "//button[@aria-label='Go to login page']")
+    login_btn.click()
+    sleep(min_wait_time)
+
+    # <a _ngcontent-tiu-c48="" routerlink="/register" translate="" class="primary-link" href="#/register">Not yet a customer?</a>
+    register_new_btn = given_webdriver.find_element(By.XPATH, "//a[@href='#/register']")
+    register_new_btn.click()
+    sleep(min_wait_time)
+
+def click_user_reg_title(given_webdriver:webdriver=None):
+    '''
+     since error msg for input fields on registration will not trigger until clicked out of
+    '''
+    #user_reg_title = given_webdriver.find_element(By.XPATH, '//h1[@text="User Registration"]')
+    user_reg_title = given_webdriver.find_element(By.TAG_NAME, 'h1')
+    scroll_to_given_element(given_webdriver, user_reg_title)
+    user_reg_title.click()
+    sleep(min_wait_time)
+
+def click_email_field(given_webdriver:webdriver=None):
+    # <input _ngcontent-tiu-c32="" id="emailControl" type="text" matinput="" aria-label="Email address field" class="mat-input-element mat-form-field-autofill-control ng-tns-c21-13 ng-pristine ng-invalid cdk-text-field-autofill-monitored ng-touched" required="" aria-required="true" aria-describedby="mat-error-2">
+    email_field = given_webdriver.find_element(By.XPATH, '//input[@id="emailControl"]')
+    email_field.click()
+
+def click_password_field(given_webdriver:webdriver=None):
+    pw_field = given_webdriver.find_element(By.XPATH, '//input[@id="passwordControl"]')
+    pw_field.click()
+
+def click_repeat_password_field(given_webdriver:webdriver=None):
+    rpw_field = given_webdriver.find_element(By.XPATH, '//input[@id="repeatPasswordControl"]')
+    rpw_field.click()
+
+def click_security_question_field(given_webdriver:webdriver=None):
+    sec_quest_field = given_webdriver.find_element(By.XPATH, '//mat-select[@name="securityQuestion"]')
+    sec_quest_field.click()
+
+def click_security_answer_field(given_webdriver:webdriver=None):
+    security_ans_field = given_webdriver.find_element(By.XPATH, '//input[@id="securityAnswerControl"]')
+    security_ans_field.click()
+
+
+
+def get_field_errors(given_webdriver:webdriver=None)->[str]:
+    error_list = []
+    try:
+        error_elems  = given_webdriver.find_elements(By.TAG_NAME, 'mat-error')
+        error_list   = [cur_err.text for cur_err in error_elems]
+    except Exception as e:
+        print(e)
+    return error_list
+
+
+
+
+
+
+
+def get_password_field_error(given_webdriver:webdriver=None)->str:
+    pw_error = get_field_error_by_xpath(wd, '//input[@id="passwordControl"]')
+    return pw_error
 
 def register_user():
     pass
@@ -221,8 +288,6 @@ def get_num_product_reviews(given_webdriver:webdriver=None)->int:
     num_reviews_int    = int(num_reviews_text)
     return num_reviews_int
 
-def expand_product_review(given_webdriver:webdriver=None):
-    pass
 
 
 
@@ -230,10 +295,70 @@ if __name__ == '__main__':
     # ToDo pull the load_url and dismiss owasp_juice popups to setup stage of testcase class
     # task 3 outline # ToDo convert to unitest TestCase
 
-    wd = load_url(target_browser=Browser.CHROME)
+    wd = get_webdriver(target_browser=Browser.CHROME)
 
     try:
+        '''
+        # ToDo pull navigation to its own test case and then load from registration url
+        wd.get(owasp_juice_shop_url)
+        sleep(def_wait_time)
+
         dismiss_owasp_juice_popups(wd)
+        navigate_to_user_registration(wd)
+        '''
+
+        wd.get(owasp_juice_registration_url)
+        sleep(def_wait_time)
+
+        dismiss_owasp_juice_popups(wd)
+
+
+        click_email_field(wd)
+        click_user_reg_title(wd)
+        email_err = get_field_errors(wd)
+        print(email_err)
+
+        wd.refresh() # to reset error msg(s)
+        sleep(min_wait_time)
+
+        click_password_field(wd)
+        click_user_reg_title(wd)
+        pw_err = get_field_errors(wd)
+        print(pw_err)
+        wd.refresh()
+        sleep(min_wait_time)
+
+
+        click_repeat_password_field(wd)
+        click_user_reg_title(wd)
+        rpw_err = get_field_errors(wd)
+        print(rpw_err)
+        wd.refresh()
+        sleep(min_wait_time)
+
+
+        click_security_question_field(wd)
+        #click_user_reg_title(wd) # click intercept error
+        actions = ActionChains(wd)
+        sec_quest_field = wd.find_element(By.XPATH, '//mat-select[@name="securityQuestion"]')
+        actions.move_to_element(sec_quest_field).perform()
+        actions.move_by_offset(-333, 0).click().perform()
+        sleep(min_wait_time)
+        sq_err = get_field_errors(wd)
+        print(sq_err)
+        wd.refresh()
+        sleep(min_wait_time)
+
+
+        click_security_answer_field(wd)
+        click_user_reg_title(wd)
+        sa_err = get_field_errors(wd)
+        print(sa_err)
+        wd.refresh()
+        sleep(min_wait_time)
+
+
+
 
     except Exception as e:
         print(e)
