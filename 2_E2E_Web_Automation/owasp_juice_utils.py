@@ -2,6 +2,7 @@
 from enum import Enum
 from random import randint
 from time import sleep
+from unittest import TestCase
 
 from selenium import webdriver
 from selenium.common.exceptions import \
@@ -26,6 +27,7 @@ class Browser(Enum):
 
 owasp_juice_url = "https://juice-shop.herokuapp.com/#/"
 
+long_wait_time = 10
 def_wait_time = 3
 min_wait_time = 1
 
@@ -115,6 +117,9 @@ def dismiss_owasp_juice_popups(given_webdriver:webdriver=None):
 def scroll_to_bottom_of_page(given_webdriver:webdriver=None):
     given_webdriver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
 
+def scroll_to_given_element(given_webdriver:webdriver=None, target_element:WebElement=None):
+    given_webdriver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth'});", target_element)
+
 def change_items_per_page(given_webdriver:webdriver=None, new_items_per_page:int = 48 ) -> bool:
     changed_to_new_ipp = False  #ipp items per page
 
@@ -190,37 +195,124 @@ def get_num_items_on_page_bottom_bar(given_webdriver:webdriver=None)->int:
 
 
 def count_num_items_on_cur_page(given_webdriver:webdriver=None)->int:
-    '''
-    '''
     store_items_elems = given_webdriver.find_elements(By.XPATH, '//div[@class="mat-grid-tile-content"]')
     num_items_elems = len(store_items_elems)
     return num_items_elems
 
 
 
-def click_product_by_name(target_product_name:str=""):
-    pass
+def click_product_by_name(given_webdriver:webdriver=None, target_product_name:str="") -> bool:
+    product_clicked_on = False
+    try:
+        target_item_elem = given_webdriver.find_element(By.XPATH, f'//div[contains(text(), "{target_product_name}")]')
+        target_item_elem.click()
+        sleep(def_wait_time)
+        product_clicked_on = True
+    except NoSuchElementException as does_not_exist_err:
+        print(f"Could not click product {target_product_name} by name.\n See {does_not_exist_err}")
+    return product_clicked_on
 
+def get_num_product_reviews(given_webdriver:webdriver=None)->int:
+    product_review_exists = 0
 
-def does_product_review_exist()->bool:
-    product_review_exists = False
-    return product_review_exists
+    product_review_bar = given_webdriver.find_element(By.XPATH, '//span[contains(@class, "mat-content")]')
+    raw_reviews_text   = product_review_bar.text
+    num_reviews_text   = raw_reviews_text.replace("Reviews", "").replace("(", "").replace(")", "").strip()
+    num_reviews_int    = int(num_reviews_text)
+    return num_reviews_int
 
-def expand_product_review():
+def expand_product_review(given_webdriver:webdriver=None):
     pass
 
 
 
 if __name__ == '__main__':
+    # ToDo pull the load_url and dismiss owasp_juice popups to setup stage of testcase class
+    # task 3 outline # ToDo convert to unitest TestCase
+
     wd = load_url(target_browser=Browser.CHROME)
 
     try:
         dismiss_owasp_juice_popups(wd)
-        print(change_items_per_page(wd))
-        print(get_num_items_on_page_bottom_bar(wd))
-        print(count_num_items_on_cur_page(wd))
+
     except Exception as e:
         print(e)
 
     wd.close()
     wd.quit()
+
+
+
+
+
+    '''
+    # task 2 outline # ToDo convert to unitest TestCase
+    wd = load_url(target_browser=Browser.CHROME)
+
+    try:
+        dismiss_owasp_juice_popups(wd)
+        click_product_by_name(wd, "Apple Juice")
+        sleep(def_wait_time)
+        popup_elements = wd.find_elements(By.XPATH, '//div[@class="cdk-overlay-pane"]') # top most html tag [div] associated with popup
+        num_popup_elements = len(popup_elements)
+        expected_num_popups = 1
+        print(f'num of popups found {num_popup_elements}')
+        ##print(TestCase().assertEqual(num_popup_elements, expected_num_popups ))
+        # assertion for associated popup ==> assert # popups == 1
+
+        target_popup = popup_elements[0]
+        popup_img = target_popup.find_element(By.XPATH, '//img[@class="img-thumbnail"]')
+        print(f'popup has img displayed; {popup_img.is_displayed()}')
+        ##TestCase().assertTrue(popup_img.is_displayed()))
+        # assertTrue(popup_img.is_displayed()
+
+        # verify url of img exists/response code 200
+        # selenium img_elem.is_displayed() + verify img_elem.size['width'] img_elem.size['height'] > 0
+
+
+        infobar_num_reviews = get_num_product_reviews(wd)
+        counted_num_reviews = 0
+        if infobar_num_reviews > 0:
+            # <mat-expansion-panel _ngcontent-mfm-c42="" aria-label="Expand for Reviews"
+            review_bar_elem = target_popup.find_element(By.XPATH, '//mat-expansion-panel[@aria-label="Expand for Reviews"]')
+            review_bar_elem.click()
+            sleep(min_wait_time)
+            # <div _ngcontent-mfm-c42="" class="comment ng-star-inserted">
+            review_comments_elems = target_popup.find_elements(By.XPATH, '//div[contains(@class, "comment")]')
+            counted_num_reviews   = len(review_comments_elems)
+
+        print(f"info bar # of reviews; {infobar_num_reviews}")
+        print(f"counted # of reviews;  {counted_num_reviews}")
+        # assert info bar # of reviews == counted # of reviews
+
+        sleep(def_wait_time)
+        # <button _ngcontent-mfm-c42="" mat-stroked-button="" mat-dialog-close="" aria-label="Close Dialog" class="mat-focus-indicator close-dialog buttons mat-stroked-button mat-button-base" type="button">
+        close_popup_btn = target_popup.find_element(By.XPATH, '//button[@aria-label="Close Dialog"]')
+        scroll_to_given_element(wd, close_popup_btn)
+        close_popup_btn.click()
+        sleep(long_wait_time)
+
+        # close popup
+    except Exception as e:
+        print(e)
+
+    wd.close()
+    wd.quit()
+    '''
+
+
+    '''
+    # task 1 outline # ToDo convert to unitest TestCase
+    wd = load_url(target_browser=Browser.CHROME)
+
+    try:
+        dismiss_owasp_juice_popups(wd)
+        print(change_items_per_page(wd))
+        expect_num_items = get_num_items_on_page_bottom_bar(wd)
+        actua_num_items  = count_num_items_on_cur_page(wd)
+    except Exception as e:
+        print(e)
+
+    wd.close()
+    wd.quit()
+    '''
