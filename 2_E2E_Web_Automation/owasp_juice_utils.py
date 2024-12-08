@@ -28,14 +28,22 @@ class Browser(Enum):
 owasp_juice_shop_url = "https://juice-shop.herokuapp.com/#/"
 owasp_juice_registration_url = "https://juice-shop.herokuapp.com/#/register"
 owasp_juice_login_url = 'https://juice-shop.herokuapp.com/#/login'
+# highly recommend running own instance of the owasp juice shop given how frequently the herokuapp version crashes and is unavailable
 
+
+# ToDo swap sleeps that aren't to avoid ddos trigger to expectedcondition wait format
+#from selenium.webdriver.support.ui import WebDriverWait
+#from selenium.webdriver.support import expected_conditions as EC
+##wait = WebDriverWait(given_webdriver, 10)  # Wait for up to 10 seconds
+##element = wait.until(EC.element_to_be_clickable((By.ID, "some-id")))
 long_wait_time = 10
 def_wait_time = 3
 min_wait_time = 1
 
+# really should have credentials in env variable or something similar, plain text non encrypted bad idea
 test_cred_email = "test_account@gmail.com"
 test_random_email = f"test_account{randint(0,999)}{randint(100,999)}{randint(100,999)}@gmail.com" # to avoid issues with registering same account twice
-test_cred_pw    = "notArealpassword123!"
+test_cred_pw    = "notArealpassword123"
 
 
 def get_webdriver(target_browser:Browser = Browser.CHROME) -> webdriver:
@@ -254,11 +262,32 @@ def get_current_basket_total_price(given_webdriver:webdriver=None)->float:
     return basket_total
 
 
-def inc_item_in_basket():
-    pass
+def increase_item_in_basket(given_webdriver:webdriver=None, item_name:str=""):
+    root_label = given_webdriver.find_element(By.XPATH, f'//mat-cell[contains(text(), "{item_name}")]')
+    #print(f"base {root_label.get_attribute('outerHTML')}")
+    associated_row = root_label.find_element(By.XPATH, "..")
+    #print(f"parent {associated_row.get_attribute('outerHTML')}")
+    # ToDo find better way than relying on index of buttons in row, trying to match on svg didn't work, need to figure out why or alt way
+    item_buttons = associated_row.find_elements(By.TAG_NAME, 'button')
+    # index 0 is dec, index 1 is inc, index 2 is delete
+    inc_item_btn = item_buttons[1]
+    inc_item_btn.click()
 
-def dec_item_in_basket():
-    pass
+    #inc_item_btn =  associated_row.find_element(By.XPATH, './/svg[contains(@class,"fa-plus-square")]')
+    #inc_item_btn.click()
+    sleep(min_wait_time)
+
+def delete_item_in_basket(given_webdriver:webdriver=None, item_name:str=""):
+    root_label = given_webdriver.find_element(By.XPATH, f'//mat-cell[contains(text(), "{item_name}")]')
+    associated_row = root_label.find_element(By.XPATH, "..")
+    #print(f"parent {associated_row.get_attribute('outerHTML')}")
+
+    item_buttons = associated_row.find_elements(By.TAG_NAME, 'button')
+    # index 0 is dec, index 1 is inc, index 2 is delete
+    del_item_btn = item_buttons[2]
+    del_item_btn.click()
+
+    sleep(min_wait_time)
 
 
 def navigate_to_checkout():
@@ -397,6 +426,14 @@ def get_num_product_reviews(given_webdriver:webdriver=None)->int:
 
 
 if __name__ == '__main__':
+    is_herokuapp_available_and_stable = False # because its so fun to test when all your test data goes poof mid test
+    if not is_herokuapp_available_and_stable:
+        heroku_base_url = "https://juice-shop.herokuapp.com"
+        local_base_url  = "http://127.0.0.1:3000"
+        owasp_juice_shop_url         = owasp_juice_shop_url.replace(heroku_base_url, local_base_url)
+        owasp_juice_registration_url = owasp_juice_registration_url.replace(heroku_base_url, local_base_url)
+        owasp_juice_login_url        = owasp_juice_login_url.replace(heroku_base_url, local_base_url)
+
     # task 4 outline
     wd = get_webdriver(target_browser=Browser.CHROME)
 
@@ -408,6 +445,11 @@ if __name__ == '__main__':
         print(get_num_items_in_basket(wd))
         navigate_to_basket(wd)
         print(get_current_basket_total_price(wd))
+        increase_item_in_basket(wd, "Apple Juice")
+        print(get_current_basket_total_price(wd))
+        delete_item_in_basket(wd, "Apple Juice")
+        print(get_current_basket_total_price(wd))
+
 
 
 
