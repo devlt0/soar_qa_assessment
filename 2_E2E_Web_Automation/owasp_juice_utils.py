@@ -238,11 +238,21 @@ def get_num_items_in_basket(given_webdriver:webdriver=None):
     return product_cnt_int
 
 
-def navigate_to_basket():
-    pass
+def navigate_to_basket(given_webdriver:webdriver=None):
+    #<button _ngcontent-seh-c124="" mat-button="" routerlink="/basket" aria-label="Show the shopping cart"
+    cart_btn = given_webdriver.find_element(By.XPATH, '//button[@aria-label="Show the shopping cart"]')
+    cart_btn.click()
+    sleep(min_wait_time)
 
-def get_current_basket_total_price():
-    pass
+
+def get_current_basket_total_price(given_webdriver:webdriver=None)->float:
+    basket_total = 0.0
+    # <div _ngcontent-seh-c18="" id="price" class="ng-star-inserted">Total Price: 1.99¤</div>
+    basket_total_elem = given_webdriver.find_element(By.XPATH, '//div[@id="price"]')
+    basket_total = float(basket_total_elem.text.replace("¤", "").replace("Total Price:", "").strip())
+
+    return basket_total
+
 
 def inc_item_in_basket():
     pass
@@ -396,6 +406,8 @@ if __name__ == '__main__':
         login_with_test_user(wd)
         add_one_each_first_five_products(wd)
         print(get_num_items_in_basket(wd))
+        navigate_to_basket(wd)
+        print(get_current_basket_total_price(wd))
 
 
 
