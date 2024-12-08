@@ -24,7 +24,6 @@ class Browser(Enum):
     CHROME  = 1
     FIREFOX = 2
     EDGE    = 3
-    #OPERA   = 4
 
 owasp_juice_shop_url = "https://juice-shop.herokuapp.com/#/"
 owasp_juice_registration_url = "https://juice-shop.herokuapp.com/#/register"
@@ -173,6 +172,10 @@ def get_registration_message(given_webdriver:webdriver=None)->str:
     registration_msg = given_webdriver.find_element(By.XPATH, '//*[@class="mat-simple-snack-bar-content"]').text
     return registration_msg
 
+def get_angular_popup_msg(given_webdriver:webdriver=None)->str:
+    #class="mat-simple-snack-bar-content"
+    popup_msg = given_webdriver.find_element(By.XPATH, '//*[@class="mat-simple-snack-bar-content"]').text
+    return popup_msg
 
 def click_login_email(given_webdriver:webdriver=None):
     login_email_field = given_webdriver.find_element(By.XPATH, '//input[@id="email"]')
@@ -192,6 +195,10 @@ def click_login_button(given_webdriver:webdriver=None):
 
 
 def login_with_test_user(given_webdriver:webdriver=None):
+    given_webdriver.get(owasp_juice_login_url)
+    sleep(def_wait_time)
+
+    dismiss_owasp_juice_popups(wd)
     email_field = click_login_email(given_webdriver)
     email_field.send_keys(test_cred_email)
 
@@ -201,6 +208,34 @@ def login_with_test_user(given_webdriver:webdriver=None):
     click_login_button(given_webdriver)
 
 
+def get_all_product_elements(given_webdriver:webdriver=None)->[WebElement]:
+    product_elements = given_webdriver.find_elements(By.TAG_NAME, 'mat-grid-tile')
+    return product_elements
+
+# ToDo move to test case
+def add_one_each_first_five_products(given_webdriver:webdriver=None):
+    sleep(def_wait_time)
+    all_product_elements  = get_all_product_elements(given_webdriver)
+    first_five_prod_elems = all_product_elements[:5]
+    for cur_prod_elem in first_five_prod_elems:
+        #print(cur_prod_elem.find_element(By.XPATH, './/div[@class="item-name"]').text)
+        cur_prod_add_basket_btn = cur_prod_elem.find_element(By.XPATH, ".//button[@aria-label='Add to Basket']")
+        scroll_to_given_element(given_webdriver, cur_prod_add_basket_btn)
+        cur_prod_add_basket_btn.click()
+        sleep(min_wait_time)
+        print(get_angular_popup_msg(given_webdriver))
+        sleep(min_wait_time)
+
+
+def get_num_items_in_basket(given_webdriver:webdriver=None):
+    product_cnt_int = 0
+    product_cnt_elem = given_webdriver.find_element(By.XPATH, '//span[contains(@class,"mat-button-wrapper")]//span[contains(@class, "fa-layers-counter")]')
+    try:
+        product_cnt_int = int(product_cnt_elem.text)
+    except Exception as e:
+        print(f"Error occured while trying to extract number of items in basket.  Please see {e}")
+
+    return product_cnt_int
 
 
 def navigate_to_basket():
@@ -228,14 +263,14 @@ def dismiss_owasp_juice_popups(given_webdriver:webdriver=None):
         cookie_btn = given_webdriver.find_element(By.XPATH, '//a[@aria-label="dismiss cookie message"]')
         cookie_btn.click()
         sleep(min_wait_time)
-    except NoSuchElementException as does_not_exist_err:
+    except (NoSuchElementException, ElementNotInteractableException) as does_not_exist_err:
         print(f"Could not find cookie popup close button. Please ensure said popup exists to dismiss. \nSee {does_not_exist_err}")
 
     try:
         dismiss_welcome_btn = given_webdriver.find_element(By.XPATH, '//button[@aria-label="Close Welcome Banner"]')
         dismiss_welcome_btn.click()
         sleep(min_wait_time)
-    except NoSuchElementException as does_not_exist_err:
+    except (NoSuchElementException, ElementNotInteractableException) as does_not_exist_err:
         print(f"Could not find welcome banner close button. Please ensure said Welcome Banner exists to dismiss. \nSee {does_not_exist_err}")
 
 
@@ -352,27 +387,60 @@ def get_num_product_reviews(given_webdriver:webdriver=None)->int:
 
 
 if __name__ == '__main__':
+    # task 4 outline
+    wd = get_webdriver(target_browser=Browser.CHROME)
+
+    try:
+
+
+        login_with_test_user(wd)
+        add_one_each_first_five_products(wd)
+        print(get_num_items_in_basket(wd))
+
+
+
+    except Exception as e:
+        print(e)
+
+    wd.close()
+    wd.quit()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    ##===============================================================
+    '''
     # ToDo pull the load_url and dismiss owasp_juice popups to setup stage of testcase class
     # task 3 outline # ToDo convert to unitest TestCase
 
     wd = get_webdriver(target_browser=Browser.CHROME)
 
     try:
-        '''
+
         # ToDo pull navigation to its own test case and then load from registration url
         wd.get(owasp_juice_shop_url)
         sleep(def_wait_time)
 
         dismiss_owasp_juice_popups(wd)
         navigate_to_user_registration(wd)
-        '''
+
 
         wd.get(owasp_juice_login_url)
         sleep(def_wait_time)
 
         dismiss_owasp_juice_popups(wd)
 
-        '''
+
         click_email_field(wd)
         click_user_reg_title(wd)
         email_err = get_field_errors(wd)
@@ -423,7 +491,7 @@ if __name__ == '__main__':
         #success_msg = "Registration completed successfully. You can now log in."
         registration_msg = get_registration_message(given_webdriver)
         # assert registration msg includes sucessful
-        '''
+
         login_with_test_user(wd)
 
 
@@ -433,11 +501,12 @@ if __name__ == '__main__':
 
     wd.close()
     wd.quit()
+    '''
 
 
 
 
-
+    ##===============================================================
     '''
     # task 2 outline # ToDo convert to unitest TestCase
     wd = load_url(target_browser=Browser.CHROME)
@@ -493,7 +562,7 @@ if __name__ == '__main__':
     wd.quit()
     '''
 
-
+    ##===============================================================
     '''
     # task 1 outline # ToDo convert to unitest TestCase
     wd = load_url(target_browser=Browser.CHROME)
