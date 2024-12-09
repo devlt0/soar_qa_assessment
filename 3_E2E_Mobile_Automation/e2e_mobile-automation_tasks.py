@@ -44,7 +44,7 @@ class TestAppium(unittest.TestCase):
         if self.driver:
             self.driver.quit()
 
-    """
+
     def test_mobile_task1(self) -> None:
         '''
         scroll down, cycle thru bottom buttons on app, scroll up
@@ -102,7 +102,7 @@ class TestAppium(unittest.TestCase):
             sleep(self.min_wait)
 
         sleep(self.short_wait)
-    """
+
 
     def test_mobile_task2(self) -> None:
         '''
@@ -132,6 +132,44 @@ class TestAppium(unittest.TestCase):
         exit_search_elem.click()
         sleep(self.min_wait)
         exit_search_elem.click()
+
+
+    def test_mobile_task3(self) -> None:
+        '''
+        go into settings, toggle all options, return home
+        '''
+        # get to settings menu
+        # //android.widget.TextView[@content-desc="More options"]
+        ellipses_menu_el = self.driver.find_element(by=AppiumBy.XPATH, value='//android.widget.TextView[@content-desc="More options"]')
+        ellipses_menu_el.click()
+        sleep(self.min_wait)
+        # //android.widget.TextView[@resource-id="org.wikipedia.alpha:id/explore_overflow_settings"]
+        settings_menu_el = self.driver.find_element(by=AppiumBy.XPATH, value='//android.widget.TextView[@resource-id="org.wikipedia.alpha:id/explore_overflow_settings"]')
+        settings_menu_el.click()
+
+        sleep(self.short_wait)
+
+        # toggle options
+        # (//android.widget.Switch[@resource-id="org.wikipedia.alpha:id/switchWidget"])[1]
+        img_toggle_el = self.driver.find_element(by=AppiumBy.XPATH, value='(//android.widget.Switch[@resource-id="org.wikipedia.alpha:id/switchWidget"])[1]')
+        img_toggle_el.click()
+
+        # (//android.widget.Switch[@resource-id="org.wikipedia.alpha:id/switchWidget"])[2]
+        preview_link_toggle_el = self.driver.find_element(by=AppiumBy.XPATH, value='(//android.widget.Switch[@resource-id="org.wikipedia.alpha:id/switchWidget"])[2]')
+        preview_link_toggle_el.click()
+
+        # (//android.widget.Switch[@resource-id="org.wikipedia.alpha:id/switchWidget"])[3]
+        send_usage_toggle_el = self.driver.find_element(by=AppiumBy.XPATH, value='(//android.widget.Switch[@resource-id="org.wikipedia.alpha:id/switchWidget"])[3]')
+        send_usage_toggle_el.click()
+
+        # (//android.widget.Switch[@resource-id="org.wikipedia.alpha:id/switchWidget"])[4]
+        send_crash_toggle_el = self.driver.find_element(by=AppiumBy.XPATH, value='(//android.widget.Switch[@resource-id="org.wikipedia.alpha:id/switchWidget"])[4]')
+        send_crash_toggle_el.click()
+
+        # go home
+        # //android.widget.ImageButton[@content-desc="Navigate up"]
+        go_home_el = self.driver.find_element(by=AppiumBy.XPATH, value='//android.widget.ImageButton[@content-desc="Navigate up"]')
+        go_home_el.click()
 
 if __name__ == '__main__':
     unittest.main()
