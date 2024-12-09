@@ -29,13 +29,9 @@ appium_server_url = 'http://localhost:4723'
 
 class TestAppium(unittest.TestCase):
     def setUp(self) -> None:
+        self.short_wait = 3
+        self.min_wait = 1
         self.driver = webdriver.Remote(appium_server_url, options=UiAutomator2Options().load_capabilities(capabilities))
-
-    def tearDown(self) -> None:
-        if self.driver:
-            self.driver.quit()
-
-    def test_mobile_task1(self) -> None:
         try:
             # dismiss warning about version of android being too new
             # //android.widget.Button[@resource-id="android:id/button1"]
@@ -44,9 +40,16 @@ class TestAppium(unittest.TestCase):
         except Exception as e:
             print(e)
 
+    def tearDown(self) -> None:
+        if self.driver:
+            self.driver.quit()
 
-        short_wait = 3
-        min_wait = 1
+    """
+    def test_mobile_task1(self) -> None:
+        '''
+        scroll down, cycle thru bottom buttons on app, scroll up
+        '''
+
 
         # scroll to bottom
         window_size = self.driver.get_window_size()
@@ -62,26 +65,26 @@ class TestAppium(unittest.TestCase):
             actions.w3c_actions.pointer_action.move_to_location(mid_X,bottom_Y)
             actions.w3c_actions.pointer_action.release()
             actions.w3c_actions.perform()
-            sleep(min_wait)
+            sleep(self.min_wait)
 
-        sleep(short_wait)
+        sleep(self.short_wait)
         # click on my lists button and wait 3s
         # //android.widget.FrameLayout[@content-desc="My lists"]
         my_lists_el = self.driver.find_element(by=AppiumBy.XPATH, value='//android.widget.FrameLayout[@content-desc="My lists"]')
         my_lists_el.click()
-        sleep(short_wait)
+        sleep(self.short_wait)
 
         # click on history button and wait 3s
         #//android.widget.FrameLayout[@content-desc="History"]
         history_el = self.driver.find_element(by=AppiumBy.XPATH, value='//android.widget.FrameLayout[@content-desc="History"]')
         history_el.click()
-        sleep(short_wait)
+        sleep(self.short_wait)
 
         # click on nearby button and wait 3s
         # //android.widget.FrameLayout[@content-desc="Nearby"]
         nearby_el = self.driver.find_element(by=AppiumBy.XPATH, value='//android.widget.FrameLayout[@content-desc="Nearby"]')
         nearby_el.click()
-        sleep(short_wait)
+        sleep(self.short_wait)
 
         # click browse
         #//android.widget.TextView[@content-desc="Search Wikipedia"]
@@ -96,14 +99,39 @@ class TestAppium(unittest.TestCase):
             actions.w3c_actions.pointer_action.move_to_location(mid_X,top_Y)
             actions.w3c_actions.pointer_action.release()
             actions.w3c_actions.perform()
-            sleep(min_wait)
+            sleep(self.min_wait)
 
+        sleep(self.short_wait)
+    """
 
+    def test_mobile_task2(self) -> None:
+        '''
+        search new york, assert search bar expanded with results, close search go home
+        '''
+        # navigate thru search bars
+        # //android.widget.LinearLayout[@resource-id="org.wikipedia.alpha:id/search_container"]
+        search_bar_el = self.driver.find_element(by=AppiumBy.XPATH, value='//android.widget.LinearLayout[@resource-id="org.wikipedia.alpha:id/search_container"]')
+        search_bar_el.click()
+        sleep(self.min_wait)
+        # //android.widget.AutoCompleteTextView[@resource-id="org.wikipedia.alpha:id/search_src_text"]
+        new_search_bar_el = self.driver.find_element(by=AppiumBy.XPATH, value='//android.widget.AutoCompleteTextView[@resource-id="org.wikipedia.alpha:id/search_src_text"]')
+        new_search_bar_el.click()
 
-        sleep(short_wait)
+        # search for query / New York
+        query = "New York"
+        new_search_bar_el.send_keys(query)
+        #(//android.widget.LinearLayout[@resource-id="org.wikipedia.alpha:id/page_list_item_container"])
+        sleep(self.short_wait)
+        # assert results exist by ensuring result count > 0
+        result_elems = self.driver.find_elements(by=AppiumBy.XPATH, value='//android.widget.LinearLayout[@resource-id="org.wikipedia.alpha:id/page_list_item_container"]')
+        num_search_results = len(result_elems)
+        self.assertTrue(num_search_results > 0)
 
-
-
+        # //android.widget.ImageView[@content-desc="Clear query"]
+        exit_search_elem = self.driver.find_element(by=AppiumBy.XPATH, value='//android.widget.ImageView[@content-desc="Clear query"]')
+        exit_search_elem.click()
+        sleep(self.min_wait)
+        exit_search_elem.click()
 
 if __name__ == '__main__':
     unittest.main()
