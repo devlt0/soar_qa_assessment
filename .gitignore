@@ -160,3 +160,9 @@ cython_debug/
 #  and can be added to the global gitignore or merged into this file.  For a more nuclear
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
+5_Performance_Testing/locust_results_stats_history.csv
+5_Performance_Testing/locust
+5_Performance_Testing/locust_report.html
+5_Performance_Testing/locust_results_exceptions.csv
+5_Performance_Testing/locust_results_failures.csv
+5_Performance_Testing/locust_results_stats.csv

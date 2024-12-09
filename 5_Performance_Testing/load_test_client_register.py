@@ -3,7 +3,7 @@ import random
 import string
 
 class WebsiteUser(HttpUser):
-    wait_time = between(1, 3)  # Random wait time between 1 and 3 seconds
+    wait_time = between(1, 3)
 
 
     @task(3)
@@ -58,3 +58,4 @@ class WebsiteUser(HttpUser):
 # locust -f load_test_client_register.py --host=http://127.0.0.1:5000 --csv=locust_results  --html=locust_report.html --users 10 --spawn-rate 1 --run-time 5m
 # go to http://127.0.0.1:5000 - click start
 # note: test duration was only 5min for sake of time, otherwise would realistically run for 30min-1hr and still run 3x times to ensure consistent results
+# since load test stay with prescribed realistic load of 10 requests at same time via 10 users, tests results show more akin to 5-7req/sec though
