@@ -13,8 +13,10 @@ from selenium.webdriver.common.alert import Alert
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
-#from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.remote.webelement import WebElement
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import Select, WebDriverWait
+
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from selenium.webdriver.edge.options import Options as EdgeOptions
@@ -32,8 +34,7 @@ owasp_juice_login_url = 'https://juice-shop.herokuapp.com/#/login'
 
 
 # ToDo swap sleeps that aren't to avoid ddos trigger to expectedcondition wait format
-#from selenium.webdriver.support.ui import WebDriverWait
-#from selenium.webdriver.support import expected_conditions as EC
+
 ##wait = WebDriverWait(given_webdriver, 10)  # Wait for up to 10 seconds
 ##element = wait.until(EC.element_to_be_clickable((By.ID, "some-id")))
 long_wait_time = 10
@@ -248,7 +249,9 @@ def get_num_items_in_basket(given_webdriver:webdriver=None):
 
 def navigate_to_basket(given_webdriver:webdriver=None):
     #<button _ngcontent-seh-c124="" mat-button="" routerlink="/basket" aria-label="Show the shopping cart"
+    sleep(min_wait_time)
     cart_btn = given_webdriver.find_element(By.XPATH, '//button[@aria-label="Show the shopping cart"]')
+    scroll_to_given_element(given_webdriver, cart_btn)
     cart_btn.click()
     sleep(min_wait_time)
 
@@ -290,11 +293,132 @@ def delete_item_in_basket(given_webdriver:webdriver=None, item_name:str=""):
     sleep(min_wait_time)
 
 
-def navigate_to_checkout():
-    pass
+def click_checkout_from_basket(given_webdriver:webdriver=None):
+    #<button _ngcontent-woe-c19="" id="checkoutButton"
+    chkout_btn = given_webdriver.find_element(By.ID, "checkoutButton")
+    chkout_btn.click()
+    sleep(min_wait_time)
 
-def form_fill_checkout_info():
-    pass
+
+def click_add_new_addy_from_chkout(given_webdriver:webdriver=None):
+    add_new_addy_btn = given_webdriver.find_element(By.XPATH, "//button[@aria-label='Add a new address']")
+    add_new_addy_btn.click()
+    sleep(min_wait_time)
+
+def fill_out_addy_info(given_webdriver:webdriver=None):
+    # could use IDs but mat-input-# doesnt seem stable/reliable or readilable updatable should something change
+    country_box = given_webdriver.find_element(By.XPATH, "//input[@data-placeholder='Please provide a country.']")
+    country_box.send_keys("Ionia")
+
+    name_box = given_webdriver.find_element(By.XPATH, "//input[@data-placeholder='Please provide a name.']")
+    name_box.send_keys("Xerxes")
+
+    phone_num_box = given_webdriver.find_element(By.XPATH, "//input[@data-placeholder='Please provide a mobile number.']")
+    phone_num_box.send_keys("8675309")
+
+    zip_box = given_webdriver.find_element(By.XPATH, "//input[@data-placeholder='Please provide a ZIP code.']")
+    zip_box.send_keys("20004")
+
+    address_box = given_webdriver.find_element(By.XPATH, "//textarea[@data-placeholder='Please provide an address.']")
+    address_box.send_keys("1600 Pennsylvania Avenue")
+
+    city_box = given_webdriver.find_element(By.XPATH, "//input[@data-placeholder='Please provide a city.']")
+    city_box.send_keys("Washington")
+
+    state_box = given_webdriver.find_element(By.XPATH, "//input[@data-placeholder='Please provide a state.']")
+    state_box.send_keys("DC")
+
+    submit_btn = given_webdriver.find_element(By.ID, "submitButton")
+    submit_btn.click()
+
+def select_addy_by_index(given_webdriver:webdriver=None, addy_index:int=0):
+    sleep(min_wait_time)
+    #<input type="radio" class="mat-radio-input" id="mat-radio-42-input" tabindex="0">
+    addy_radio_btns = given_webdriver.find_elements(By.TAG_NAME, "mat-radio-button") #"//input[@class='mat-radio-input']")
+    num_radio_btns = len(addy_radio_btns)
+    if addy_index >= num_radio_btns:
+        raise IndexError(f"given index {addy_index} is not within the available address buttons of length [{num_radio_btns}]")
+    target_rbtn = addy_radio_btns[addy_index]
+    target_rbtn.click()
+
+    continue_btn = given_webdriver.find_element(By.XPATH, "//button[@aria-label='Proceed to payment selection']")
+    continue_btn.click()
+
+def select_delivery_method_by_index(given_webdriver:webdriver=None, deliv_index:int=0):
+    deliv_radio_btns = given_webdriver.find_elements(By.TAG_NAME, "mat-radio-button") #"//input[@class='mat-radio-input']")
+    num_deliv_btns = len(deliv_radio_btns)
+    if deliv_index >= num_deliv_btns:
+        raise IndexError(f"given index {deliv_index} is not within the available delivery buttons of length [{num_deliv_btns}]")
+    target_dbtn = deliv_radio_btns[deliv_index]
+    target_dbtn.click()
+
+    continue_btn = given_webdriver.find_element(By.XPATH, "//button[@aria-label='Proceed to delivery method selection']")
+    continue_btn.click()
+
+def get_wallet_balance_from_payment_options(given_webdriver:webdriver=None)->float:
+    wallet_balance = None
+    #<span _ngcontent-msd-c86="" class="confirmation card-title"> 0.00</span>
+    wallet_balance_elem = given_webdriver.find_element(By.XPATH, "//span[@class='confirmation card-title']")
+    wallet_balance = float(wallet_balance_elem.text.strip())
+    return wallet_balance
+
+
+def add_cc_info_at_payment_options(given_webdriver:webdriver=None):
+    #<mat-expansion-panel
+    sleep(def_wait_time)
+    dropdown_menus = given_webdriver.find_elements(By.TAG_NAME, 'mat-expansion-panel')
+    add_cc_bar = dropdown_menus[0]
+    #index 0 is add cc, 1 is add coupon, 2 is other payment options
+
+    add_cc_bar.click()
+    sleep(def_wait_time)
+
+    all_input_boxes = given_webdriver.find_elements(By.XPATH, '//input[contains(@id, "mat-input")]')
+    all_dropdowns = given_webdriver.find_elements(By.XPATH, '//select[contains(@id, "mat-input")]')
+    #(By.TAG_NAME, 'input')
+
+    name_box = all_input_boxes[1]  #given_webdriver.find_element(By.XPATH, '//mat-label[contains(text(), "Name")]')
+    scroll_to_given_element(given_webdriver, name_box)
+    #WebDriverWait( given_webdriver, def_wait_time ).until( EC.element_to_be_clickable(name_box) )
+    #(By.ID, 'mat-input-13') # not reliable
+    name_box.send_keys("Xerxes")
+
+    cc_num_box = all_input_boxes[2]
+    #cc_num_box.click()
+    cc_num_box.send_keys('8675309012345678')
+
+    cc_month_dropdown = all_dropdowns[0]
+    cc_month_select = Select(cc_month_dropdown)
+    cc_month_select.select_by_value("7")
+
+    cc_year_dropdown = all_dropdowns[1]
+    cc_year_select = Select(cc_year_dropdown)
+    cc_year_select.select_by_value("2099")
+    sleep(min_wait_time)
+
+    submit_info_btn = given_webdriver.find_element(By.ID, 'submitButton')
+    WebDriverWait( given_webdriver, def_wait_time ).until( EC.element_to_be_clickable(submit_info_btn) )
+    submit_info_btn.click()
+
+
+def select_cc_by_index_payment_options(given_webdriver:webdriver=None, cc_index:int=0):
+    sleep(min_wait_time)
+    cc_radio_btns = given_webdriver.find_elements(By.TAG_NAME, "mat-radio-button")
+    num_cc_btns = len(cc_radio_btns)
+    if cc_index >= num_cc_btns:
+        raise IndexError(f"given index {cc_index} is not within the available credit card info buttons of length [{num_cc_btns}]")
+    target_ccbtn = cc_radio_btns[cc_index]
+    target_ccbtn.click()
+
+
+def go_to_order_review_from_payment_options(given_webdriver:webdriver=None):
+    continue_btn = given_webdriver.find_element(By.XPATH, "//button[@aria-label='Proceed to review']")
+    continue_btn.click()
+    sleep(min_wait_time)
+
+def checkout_at_order_review(given_webdriver:webdriver=None):
+    chkout_btn = given_webdriver.find_element(By.ID, "checkoutButton")
+    chkout_btn.click()
 
 
 def dismiss_owasp_juice_popups(given_webdriver:webdriver=None):
@@ -442,193 +566,202 @@ if __name__ == '__main__':
 
         login_with_test_user(wd)
         add_one_each_first_five_products(wd)
-        print(get_num_items_in_basket(wd))
+        #print(get_num_items_in_basket(wd))
         navigate_to_basket(wd)
-        print(get_current_basket_total_price(wd))
-        increase_item_in_basket(wd, "Apple Juice")
-        print(get_current_basket_total_price(wd))
-        delete_item_in_basket(wd, "Apple Juice")
-        print(get_current_basket_total_price(wd))
-
-
-
-
-    except Exception as e:
-        print(e)
-
-    wd.close()
-    wd.quit()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    ##===============================================================
-    '''
-    # ToDo pull the load_url and dismiss owasp_juice popups to setup stage of testcase class
-    # task 3 outline # ToDo convert to unitest TestCase
-
-    wd = get_webdriver(target_browser=Browser.CHROME)
-
-    try:
-
-        # ToDo pull navigation to its own test case and then load from registration url
-        wd.get(owasp_juice_shop_url)
-        sleep(def_wait_time)
-
-        dismiss_owasp_juice_popups(wd)
-        navigate_to_user_registration(wd)
-
-
-        wd.get(owasp_juice_login_url)
-        sleep(def_wait_time)
-
-        dismiss_owasp_juice_popups(wd)
-
-
-        click_email_field(wd)
-        click_user_reg_title(wd)
-        email_err = get_field_errors(wd)
-        print(email_err)
-
-        wd.refresh() # to reset error msg(s)
-        sleep(min_wait_time)
-
-        click_password_field(wd)
-        click_user_reg_title(wd)
-        pw_err = get_field_errors(wd)
-        print(pw_err)
-        wd.refresh()
-        sleep(min_wait_time)
-
-
-        click_repeat_password_field(wd)
-        click_user_reg_title(wd)
-        rpw_err = get_field_errors(wd)
-        print(rpw_err)
-        wd.refresh()
-        sleep(min_wait_time)
-
-
-        click_security_question_field(wd)
-        #click_user_reg_title(wd) # click intercept error
-        actions = ActionChains(wd)
-        sec_quest_field = wd.find_element(By.XPATH, '//mat-select[@name="securityQuestion"]')
-        actions.move_to_element(sec_quest_field).perform()
-        actions.move_by_offset(-333, 0).click().perform()
-        sleep(min_wait_time)
-        sq_err = get_field_errors(wd)
-        print(sq_err)
-        wd.refresh()
-        sleep(min_wait_time)
-
-
-        click_security_answer_field(wd)
-        click_user_reg_title(wd)
-        sa_err = get_field_errors(wd)
-        print(sa_err)
-        wd.refresh()
-        sleep(min_wait_time)
-
-        click_password_advice(wd)
-        sleep(min_wait_time)
-        register_test_user(wd)
-        #success_msg = "Registration completed successfully. You can now log in."
-        registration_msg = get_registration_message(given_webdriver)
-        # assert registration msg includes sucessful
-
-        login_with_test_user(wd)
-
-
-
-    except Exception as e:
-        print(e)
-
-    wd.close()
-    wd.quit()
-    '''
-
-
-
-
-    ##===============================================================
-    '''
-    # task 2 outline # ToDo convert to unitest TestCase
-    wd = load_url(target_browser=Browser.CHROME)
-
-    try:
-        dismiss_owasp_juice_popups(wd)
-        click_product_by_name(wd, "Apple Juice")
-        sleep(def_wait_time)
-        popup_elements = wd.find_elements(By.XPATH, '//div[@class="cdk-overlay-pane"]') # top most html tag [div] associated with popup
-        num_popup_elements = len(popup_elements)
-        expected_num_popups = 1
-        print(f'num of popups found {num_popup_elements}')
-        ##print(TestCase().assertEqual(num_popup_elements, expected_num_popups ))
-        # assertion for associated popup ==> assert # popups == 1
-
-        target_popup = popup_elements[0]
-        popup_img = target_popup.find_element(By.XPATH, '//img[@class="img-thumbnail"]')
-        print(f'popup has img displayed; {popup_img.is_displayed()}')
-        ##TestCase().assertTrue(popup_img.is_displayed()))
-        # assertTrue(popup_img.is_displayed()
-
-        # verify url of img exists/response code 200
-        # selenium img_elem.is_displayed() + verify img_elem.size['width'] img_elem.size['height'] > 0
-
-
-        infobar_num_reviews = get_num_product_reviews(wd)
-        counted_num_reviews = 0
-        if infobar_num_reviews > 0:
-            # <mat-expansion-panel _ngcontent-mfm-c42="" aria-label="Expand for Reviews"
-            review_bar_elem = target_popup.find_element(By.XPATH, '//mat-expansion-panel[@aria-label="Expand for Reviews"]')
-            review_bar_elem.click()
-            sleep(min_wait_time)
-            # <div _ngcontent-mfm-c42="" class="comment ng-star-inserted">
-            review_comments_elems = target_popup.find_elements(By.XPATH, '//div[contains(@class, "comment")]')
-            counted_num_reviews   = len(review_comments_elems)
-
-        print(f"info bar # of reviews; {infobar_num_reviews}")
-        print(f"counted # of reviews;  {counted_num_reviews}")
-        # assert info bar # of reviews == counted # of reviews
-
-        sleep(def_wait_time)
-        # <button _ngcontent-mfm-c42="" mat-stroked-button="" mat-dialog-close="" aria-label="Close Dialog" class="mat-focus-indicator close-dialog buttons mat-stroked-button mat-button-base" type="button">
-        close_popup_btn = target_popup.find_element(By.XPATH, '//button[@aria-label="Close Dialog"]')
-        scroll_to_given_element(wd, close_popup_btn)
-        close_popup_btn.click()
+        #print(get_current_basket_total_price(wd))
+        #increase_item_in_basket(wd, "Apple Juice")
+        #print(get_current_basket_total_price(wd))
+        #delete_item_in_basket(wd, "Apple Juice")
+        #print(get_current_basket_total_price(wd))
+        click_checkout_from_basket(wd)
+        #click_add_new_addy_from_chkout(wd)
+        #fill_out_addy_info(wd)
+        select_addy_by_index(wd, 0)
+        select_delivery_method_by_index(wd, 0)
+        print(get_wallet_balance_from_payment_options(wd))
+        add_cc_info_at_payment_options(wd)
+        select_cc_by_index_payment_options(wd, 0)
+        go_to_order_review_from_payment_options(wd)
+        checkout_at_order_review(wd)
         sleep(long_wait_time)
 
-        # close popup
+
     except Exception as e:
         print(e)
 
     wd.close()
     wd.quit()
-    '''
 
-    ##===============================================================
-    '''
-    # task 1 outline # ToDo convert to unitest TestCase
-    wd = load_url(target_browser=Browser.CHROME)
 
-    try:
-        dismiss_owasp_juice_popups(wd)
-        print(change_items_per_page(wd))
-        expect_num_items = get_num_items_on_page_bottom_bar(wd)
-        actua_num_items  = count_num_items_on_cur_page(wd)
-    except Exception as e:
-        print(e)
 
-    wd.close()
-    wd.quit()
-    '''
+
+
+
+
+
+
+
+
+
+
+
+##===============================================================
+'''
+# ToDo pull the load_url and dismiss owasp_juice popups to setup stage of testcase class
+# task 3 outline # ToDo convert to unitest TestCase
+
+wd = get_webdriver(target_browser=Browser.CHROME)
+
+try:
+
+    # ToDo pull navigation to its own test case and then load from registration url
+    wd.get(owasp_juice_shop_url)
+    sleep(def_wait_time)
+
+    dismiss_owasp_juice_popups(wd)
+    navigate_to_user_registration(wd)
+
+
+    wd.get(owasp_juice_login_url)
+    sleep(def_wait_time)
+
+    dismiss_owasp_juice_popups(wd)
+
+
+    click_email_field(wd)
+    click_user_reg_title(wd)
+    email_err = get_field_errors(wd)
+    print(email_err)
+
+    wd.refresh() # to reset error msg(s)
+    sleep(min_wait_time)
+
+    click_password_field(wd)
+    click_user_reg_title(wd)
+    pw_err = get_field_errors(wd)
+    print(pw_err)
+    wd.refresh()
+    sleep(min_wait_time)
+
+
+    click_repeat_password_field(wd)
+    click_user_reg_title(wd)
+    rpw_err = get_field_errors(wd)
+    print(rpw_err)
+    wd.refresh()
+    sleep(min_wait_time)
+
+
+    click_security_question_field(wd)
+    #click_user_reg_title(wd) # click intercept error
+    actions = ActionChains(wd)
+    sec_quest_field = wd.find_element(By.XPATH, '//mat-select[@name="securityQuestion"]')
+    actions.move_to_element(sec_quest_field).perform()
+    actions.move_by_offset(-333, 0).click().perform()
+    sleep(min_wait_time)
+    sq_err = get_field_errors(wd)
+    print(sq_err)
+    wd.refresh()
+    sleep(min_wait_time)
+
+
+    click_security_answer_field(wd)
+    click_user_reg_title(wd)
+    sa_err = get_field_errors(wd)
+    print(sa_err)
+    wd.refresh()
+    sleep(min_wait_time)
+
+    click_password_advice(wd)
+    sleep(min_wait_time)
+    register_test_user(wd)
+    #success_msg = "Registration completed successfully. You can now log in."
+    registration_msg = get_registration_message(given_webdriver)
+    # assert registration msg includes sucessful
+
+    login_with_test_user(wd)
+
+
+
+except Exception as e:
+    print(e)
+
+wd.close()
+wd.quit()
+'''
+
+
+
+
+##===============================================================
+'''
+# task 2 outline # ToDo convert to unitest TestCase
+wd = load_url(target_browser=Browser.CHROME)
+
+try:
+    dismiss_owasp_juice_popups(wd)
+    click_product_by_name(wd, "Apple Juice")
+    sleep(def_wait_time)
+    popup_elements = wd.find_elements(By.XPATH, '//div[@class="cdk-overlay-pane"]') # top most html tag [div] associated with popup
+    num_popup_elements = len(popup_elements)
+    expected_num_popups = 1
+    print(f'num of popups found {num_popup_elements}')
+    ##print(TestCase().assertEqual(num_popup_elements, expected_num_popups ))
+    # assertion for associated popup ==> assert # popups == 1
+
+    target_popup = popup_elements[0]
+    popup_img = target_popup.find_element(By.XPATH, '//img[@class="img-thumbnail"]')
+    print(f'popup has img displayed; {popup_img.is_displayed()}')
+    ##TestCase().assertTrue(popup_img.is_displayed()))
+    # assertTrue(popup_img.is_displayed()
+
+    # verify url of img exists/response code 200
+    # selenium img_elem.is_displayed() + verify img_elem.size['width'] img_elem.size['height'] > 0
+
+
+    infobar_num_reviews = get_num_product_reviews(wd)
+    counted_num_reviews = 0
+    if infobar_num_reviews > 0:
+        # <mat-expansion-panel _ngcontent-mfm-c42="" aria-label="Expand for Reviews"
+        review_bar_elem = target_popup.find_element(By.XPATH, '//mat-expansion-panel[@aria-label="Expand for Reviews"]')
+        review_bar_elem.click()
+        sleep(min_wait_time)
+        # <div _ngcontent-mfm-c42="" class="comment ng-star-inserted">
+        review_comments_elems = target_popup.find_elements(By.XPATH, '//div[contains(@class, "comment")]')
+        counted_num_reviews   = len(review_comments_elems)
+
+    print(f"info bar # of reviews; {infobar_num_reviews}")
+    print(f"counted # of reviews;  {counted_num_reviews}")
+    # assert info bar # of reviews == counted # of reviews
+
+    sleep(def_wait_time)
+    # <button _ngcontent-mfm-c42="" mat-stroked-button="" mat-dialog-close="" aria-label="Close Dialog" class="mat-focus-indicator close-dialog buttons mat-stroked-button mat-button-base" type="button">
+    close_popup_btn = target_popup.find_element(By.XPATH, '//button[@aria-label="Close Dialog"]')
+    scroll_to_given_element(wd, close_popup_btn)
+    close_popup_btn.click()
+    sleep(long_wait_time)
+
+    # close popup
+except Exception as e:
+    print(e)
+
+wd.close()
+wd.quit()
+'''
+
+##===============================================================
+'''
+# task 1 outline # ToDo convert to unitest TestCase
+wd = load_url(target_browser=Browser.CHROME)
+
+try:
+    dismiss_owasp_juice_popups(wd)
+    print(change_items_per_page(wd))
+    expect_num_items = get_num_items_on_page_bottom_bar(wd)
+    actua_num_items  = count_num_items_on_cur_page(wd)
+except Exception as e:
+    print(e)
+
+wd.close()
+wd.quit()
+'''
