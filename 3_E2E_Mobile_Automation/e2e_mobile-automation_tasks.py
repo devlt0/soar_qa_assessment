@@ -1,6 +1,3 @@
-# sanity chk for env setup
-# provided by https://appium.io/docs/en/latest/quickstart/test-py/
-
 import unittest
 from time import sleep
 from appium import webdriver  #, TouchAction
