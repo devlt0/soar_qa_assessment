@@ -34,6 +34,49 @@ class WebsiteUser(HttpUser):
             print(f"Failed Registration for: {email}")
 
 
+    @task(6)
+    def register_valid_user(self):
+        full_name = self.random_string(10)
+        user_name = self.random_string(8)
+        email     = f"{self.random_string(5)}@test.com"
+        password  = "Test@1234"
+        phone     = f"+1{random.randint(1000000000, 9999999999)}"
+
+        response = self.client.post("/client_registeration", data={
+            "fullName": full_name,
+            "userName": user_name,
+            "email": email,
+            "password": password,
+            "phone": phone
+        })
+
+        if response.status_code == 200:
+            print(f"Registered User: {email}")
+        else:
+            print(f"Failed Registration for: {email}")
+
+
+    @task(1) # will run 1/3 as oft as valid user
+    def register_invalid_user(self):
+        full_name = ""
+        user_name = ""
+        email     = ""
+        password  = ""
+        phone     = ""
+
+        response = self.client.post("/client_registeration", data={
+            "fullName": full_name,
+            "userName": user_name,
+            "email": email,
+            "password": password,
+            "phone": phone
+        })
+
+        if response.status_code == 200:
+            print(f"Registered User: {email}")
+        else:
+            print(f"Failed Registration for: {email}")
+
 
     @task(1)
     def invalid_login_random_credentials(self):
