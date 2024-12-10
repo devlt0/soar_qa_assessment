@@ -10,7 +10,7 @@ def step_impl(context, num_users, load_duration, spawn_rate, report_fname):
         report_fname += '.html'
     print("Executing Locust load tests...")
     result = subprocess.run([
-        "locust", "-f", "locustfile.py", "--headless", "--users", f"{num_users}", "--spawn-rate", f"{spawn_rate}", "--run-time", "{load_duration}m", "--html", f"{report_fname}"
+        "locust", "-f", "locust_login_registration_mixedvalid.py", "--headless", "--users", f"{num_users}", "--spawn-rate", f"{spawn_rate}", "--run-time", "{load_duration}m", "--html", f"{report_fname}"
     ], capture_output=True, text=True)
     context.locust_result = result
     print(result.stdout)
