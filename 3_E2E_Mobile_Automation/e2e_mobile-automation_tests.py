@@ -1,7 +1,7 @@
 # Author: Zax
 import unittest
 from time import sleep
-from appium import webdriver  #, TouchAction
+from appium import webdriver
 from appium.options.android import UiAutomator2Options
 from appium.webdriver.common.appiumby import AppiumBy
 from selenium.webdriver.common.actions import interaction

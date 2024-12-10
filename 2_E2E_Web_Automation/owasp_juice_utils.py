@@ -1,5 +1,5 @@
-
 '''
+# Author: Zax
 util file meant to help in testing of owasp juice app
 currently setup expecting local instance of owasp juice app to be ran on
 '''
