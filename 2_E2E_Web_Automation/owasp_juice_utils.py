@@ -1,4 +1,9 @@
 
+'''
+util file meant to help in testing of owasp juice app
+currently setup expecting local instance of owasp juice app to be ran on
+'''
+
 from enum import Enum
 from random import randint
 from time import sleep
@@ -31,6 +36,15 @@ owasp_juice_shop_url = "https://juice-shop.herokuapp.com/#/"
 owasp_juice_registration_url = "https://juice-shop.herokuapp.com/#/register"
 owasp_juice_login_url = 'https://juice-shop.herokuapp.com/#/login'
 # highly recommend running own instance of the owasp juice shop given how frequently the herokuapp version crashes and is unavailable
+is_herokuapp_available_and_stable = False # really should have unique test env per tester so local setup is preferred
+if not is_herokuapp_available_and_stable:
+    heroku_base_url = "https://juice-shop.herokuapp.com"
+    local_base_url  = "http://127.0.0.1:3000"
+
+    owasp_juice_shop_url         = owasp_juice_shop_url.replace(heroku_base_url, local_base_url)
+    owasp_juice_registration_url = owasp_juice_registration_url.replace(heroku_base_url, local_base_url)
+    owasp_juice_login_url        = owasp_juice_login_url.replace(heroku_base_url, local_base_url)
+
 
 
 # ToDo swap sleeps that aren't to avoid ddos trigger to expectedcondition wait format
@@ -168,7 +182,7 @@ def register_test_user(given_webdriver:webdriver=None, use_random_email:bool=Tru
     sa_elem.send_keys(test_cred_pw)
 
     sq_elem = click_security_question_field(given_webdriver)
-    actions = ActionChains(wd)
+    actions = ActionChains(given_webdriver)
     actions.move_to_element(sq_elem).perform()
     actions.click().perform()
 
@@ -204,10 +218,11 @@ def click_login_button(given_webdriver:webdriver=None):
 
 
 def login_with_test_user(given_webdriver:webdriver=None):
+    owasp_juice_login_url
     given_webdriver.get(owasp_juice_login_url)
     sleep(def_wait_time)
 
-    dismiss_owasp_juice_popups(wd)
+    dismiss_owasp_juice_popups(given_webdriver)
     email_field = click_login_email(given_webdriver)
     email_field.send_keys(test_cred_email)
 
@@ -220,21 +235,6 @@ def login_with_test_user(given_webdriver:webdriver=None):
 def get_all_product_elements(given_webdriver:webdriver=None)->[WebElement]:
     product_elements = given_webdriver.find_elements(By.TAG_NAME, 'mat-grid-tile')
     return product_elements
-
-# ToDo move to test case
-def add_one_each_first_five_products(given_webdriver:webdriver=None):
-    sleep(def_wait_time)
-    all_product_elements  = get_all_product_elements(given_webdriver)
-    first_five_prod_elems = all_product_elements[:5]
-    for cur_prod_elem in first_five_prod_elems:
-        #print(cur_prod_elem.find_element(By.XPATH, './/div[@class="item-name"]').text)
-        cur_prod_add_basket_btn = cur_prod_elem.find_element(By.XPATH, ".//button[@aria-label='Add to Basket']")
-        scroll_to_given_element(given_webdriver, cur_prod_add_basket_btn)
-        cur_prod_add_basket_btn.click()
-        sleep(min_wait_time)
-        print(get_angular_popup_msg(given_webdriver))
-        sleep(min_wait_time)
-
 
 def get_num_items_in_basket(given_webdriver:webdriver=None):
     product_cnt_int = 0
@@ -375,7 +375,7 @@ def add_cc_info_at_payment_options(given_webdriver:webdriver=None):
 
     all_input_boxes = given_webdriver.find_elements(By.XPATH, '//input[contains(@id, "mat-input")]')
     all_dropdowns = given_webdriver.find_elements(By.XPATH, '//select[contains(@id, "mat-input")]')
-    #(By.TAG_NAME, 'input')
+
 
     name_box = all_input_boxes[1]  #given_webdriver.find_element(By.XPATH, '//mat-label[contains(text(), "Name")]')
     scroll_to_given_element(given_webdriver, name_box)
@@ -428,6 +428,8 @@ def dismiss_owasp_juice_popups(given_webdriver:webdriver=None):
         sleep(min_wait_time)
     except (NoSuchElementException, ElementNotInteractableException) as does_not_exist_err:
         print(f"Could not find cookie popup close button. Please ensure said popup exists to dismiss. \nSee {does_not_exist_err}")
+    except Exception as e:
+        print(f"Unknown error on trying to dismiss cookie popup")
 
     try:
         dismiss_welcome_btn = given_webdriver.find_element(By.XPATH, '//button[@aria-label="Close Welcome Banner"]')
@@ -435,6 +437,8 @@ def dismiss_owasp_juice_popups(given_webdriver:webdriver=None):
         sleep(min_wait_time)
     except (NoSuchElementException, ElementNotInteractableException) as does_not_exist_err:
         print(f"Could not find welcome banner close button. Please ensure said Welcome Banner exists to dismiss. \nSee {does_not_exist_err}")
+    except Exception as e:
+        print(f"Unknown error on trying to dismiss welcome banner")
 
 
 
@@ -546,222 +550,3 @@ def get_num_product_reviews(given_webdriver:webdriver=None)->int:
     num_reviews_int    = int(num_reviews_text)
     return num_reviews_int
 
-
-
-
-if __name__ == '__main__':
-    is_herokuapp_available_and_stable = False # because its so fun to test when all your test data goes poof mid test
-    if not is_herokuapp_available_and_stable:
-        heroku_base_url = "https://juice-shop.herokuapp.com"
-        local_base_url  = "http://127.0.0.1:3000"
-        owasp_juice_shop_url         = owasp_juice_shop_url.replace(heroku_base_url, local_base_url)
-        owasp_juice_registration_url = owasp_juice_registration_url.replace(heroku_base_url, local_base_url)
-        owasp_juice_login_url        = owasp_juice_login_url.replace(heroku_base_url, local_base_url)
-
-    # task 4 outline
-    wd = get_webdriver(target_browser=Browser.CHROME)
-
-    try:
-
-
-        login_with_test_user(wd)
-        add_one_each_first_five_products(wd)
-        #print(get_num_items_in_basket(wd))
-        navigate_to_basket(wd)
-        #print(get_current_basket_total_price(wd))
-        #increase_item_in_basket(wd, "Apple Juice")
-        #print(get_current_basket_total_price(wd))
-        #delete_item_in_basket(wd, "Apple Juice")
-        #print(get_current_basket_total_price(wd))
-        click_checkout_from_basket(wd)
-        #click_add_new_addy_from_chkout(wd)
-        #fill_out_addy_info(wd)
-        select_addy_by_index(wd, 0)
-        select_delivery_method_by_index(wd, 0)
-        print(get_wallet_balance_from_payment_options(wd))
-        add_cc_info_at_payment_options(wd)
-        select_cc_by_index_payment_options(wd, 0)
-        go_to_order_review_from_payment_options(wd)
-        checkout_at_order_review(wd)
-        sleep(long_wait_time)
-
-
-    except Exception as e:
-        print(e)
-
-    wd.close()
-    wd.quit()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-##===============================================================
-'''
-# ToDo pull the load_url and dismiss owasp_juice popups to setup stage of testcase class
-# task 3 outline # ToDo convert to unitest TestCase
-
-wd = get_webdriver(target_browser=Browser.CHROME)
-
-try:
-
-    # ToDo pull navigation to its own test case and then load from registration url
-    wd.get(owasp_juice_shop_url)
-    sleep(def_wait_time)
-
-    dismiss_owasp_juice_popups(wd)
-    navigate_to_user_registration(wd)
-
-
-    wd.get(owasp_juice_login_url)
-    sleep(def_wait_time)
-
-    dismiss_owasp_juice_popups(wd)
-
-
-    click_email_field(wd)
-    click_user_reg_title(wd)
-    email_err = get_field_errors(wd)
-    print(email_err)
-
-    wd.refresh() # to reset error msg(s)
-    sleep(min_wait_time)
-
-    click_password_field(wd)
-    click_user_reg_title(wd)
-    pw_err = get_field_errors(wd)
-    print(pw_err)
-    wd.refresh()
-    sleep(min_wait_time)
-
-
-    click_repeat_password_field(wd)
-    click_user_reg_title(wd)
-    rpw_err = get_field_errors(wd)
-    print(rpw_err)
-    wd.refresh()
-    sleep(min_wait_time)
-
-
-    click_security_question_field(wd)
-    #click_user_reg_title(wd) # click intercept error
-    actions = ActionChains(wd)
-    sec_quest_field = wd.find_element(By.XPATH, '//mat-select[@name="securityQuestion"]')
-    actions.move_to_element(sec_quest_field).perform()
-    actions.move_by_offset(-333, 0).click().perform()
-    sleep(min_wait_time)
-    sq_err = get_field_errors(wd)
-    print(sq_err)
-    wd.refresh()
-    sleep(min_wait_time)
-
-
-    click_security_answer_field(wd)
-    click_user_reg_title(wd)
-    sa_err = get_field_errors(wd)
-    print(sa_err)
-    wd.refresh()
-    sleep(min_wait_time)
-
-    click_password_advice(wd)
-    sleep(min_wait_time)
-    register_test_user(wd)
-    #success_msg = "Registration completed successfully. You can now log in."
-    registration_msg = get_registration_message(given_webdriver)
-    # assert registration msg includes sucessful
-
-    login_with_test_user(wd)
-
-
-
-except Exception as e:
-    print(e)
-
-wd.close()
-wd.quit()
-'''
-
-
-
-
-##===============================================================
-'''
-# task 2 outline # ToDo convert to unitest TestCase
-wd = load_url(target_browser=Browser.CHROME)
-
-try:
-    dismiss_owasp_juice_popups(wd)
-    click_product_by_name(wd, "Apple Juice")
-    sleep(def_wait_time)
-    popup_elements = wd.find_elements(By.XPATH, '//div[@class="cdk-overlay-pane"]') # top most html tag [div] associated with popup
-    num_popup_elements = len(popup_elements)
-    expected_num_popups = 1
-    print(f'num of popups found {num_popup_elements}')
-    ##print(TestCase().assertEqual(num_popup_elements, expected_num_popups ))
-    # assertion for associated popup ==> assert # popups == 1
-
-    target_popup = popup_elements[0]
-    popup_img = target_popup.find_element(By.XPATH, '//img[@class="img-thumbnail"]')
-    print(f'popup has img displayed; {popup_img.is_displayed()}')
-    ##TestCase().assertTrue(popup_img.is_displayed()))
-    # assertTrue(popup_img.is_displayed()
-
-    # verify url of img exists/response code 200
-    # selenium img_elem.is_displayed() + verify img_elem.size['width'] img_elem.size['height'] > 0
-
-
-    infobar_num_reviews = get_num_product_reviews(wd)
-    counted_num_reviews = 0
-    if infobar_num_reviews > 0:
-        # <mat-expansion-panel _ngcontent-mfm-c42="" aria-label="Expand for Reviews"
-        review_bar_elem = target_popup.find_element(By.XPATH, '//mat-expansion-panel[@aria-label="Expand for Reviews"]')
-        review_bar_elem.click()
-        sleep(min_wait_time)
-        # <div _ngcontent-mfm-c42="" class="comment ng-star-inserted">
-        review_comments_elems = target_popup.find_elements(By.XPATH, '//div[contains(@class, "comment")]')
-        counted_num_reviews   = len(review_comments_elems)
-
-    print(f"info bar # of reviews; {infobar_num_reviews}")
-    print(f"counted # of reviews;  {counted_num_reviews}")
-    # assert info bar # of reviews == counted # of reviews
-
-    sleep(def_wait_time)
-    # <button _ngcontent-mfm-c42="" mat-stroked-button="" mat-dialog-close="" aria-label="Close Dialog" class="mat-focus-indicator close-dialog buttons mat-stroked-button mat-button-base" type="button">
-    close_popup_btn = target_popup.find_element(By.XPATH, '//button[@aria-label="Close Dialog"]')
-    scroll_to_given_element(wd, close_popup_btn)
-    close_popup_btn.click()
-    sleep(long_wait_time)
-
-    # close popup
-except Exception as e:
-    print(e)
-
-wd.close()
-wd.quit()
-'''
-
-##===============================================================
-'''
-# task 1 outline # ToDo convert to unitest TestCase
-wd = load_url(target_browser=Browser.CHROME)
-
-try:
-    dismiss_owasp_juice_popups(wd)
-    print(change_items_per_page(wd))
-    expect_num_items = get_num_items_on_page_bottom_bar(wd)
-    actua_num_items  = count_num_items_on_cur_page(wd)
-except Exception as e:
-    print(e)
-
-wd.close()
-wd.quit()
-'''
