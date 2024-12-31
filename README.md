@@ -10,3 +10,5 @@ Software Testing Assessment including 6 parts;
 4) Logical & Security Testing
 5) Performance Testing
 6) Test Management
+
+Given 1 week from pdf of assessment to turn in.  
